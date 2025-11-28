@@ -24,7 +24,7 @@ function Login() {
     try {
       if (isLogin) {
         // Login request
-        const res = await axios.post("http://localhost:5000/api/login", {
+        const res = await axios.post("/api/login", {
           email: form.email,
           password: form.password,
         });
@@ -35,7 +35,7 @@ function Login() {
         setForm({ firstname: "", lastname: "", email: "", password: "" });
       } else {
         // Register request - saves to MongoDB CarDealership database
-        const res = await axios.post("http://localhost:5000/api/register", form);
+        const res = await axios.post("/api/register", form);
         setMessage(`Registration successful! Welcome ${res.data.user.firstname}!`);
         setMessageType("success");
         console.log("Registration response:", res.data);
