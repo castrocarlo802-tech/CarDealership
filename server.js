@@ -44,7 +44,30 @@ app.get("/api/health", (req, res) => {
 
 // Serve HTML page at root
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error('Error serving index.html:', err);
+            res.status(200).send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Car Dealership API</title>
+                    <style>body { font-family: Arial; margin: 50px; }</style>
+                </head>
+                <body>
+                    <h1>🚗 Car Dealership API</h1>
+                    <p>Server is running successfully!</p>
+                    <ul>
+                        <li><a href="/api/health">Health Check</a></li>
+                        <li><a href="/users">View Users</a></li>
+                        <li><a href="/cars.html">View Cars</a></li>
+                    </ul>
+                </body>
+                </html>
+            `);
+        }
+    });
 });
 
 // Helper function to escape HTML to prevent XSS attacks
