@@ -13,7 +13,11 @@ const app = express();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files - handle multiple possible paths for Render compatibility
+const publicPath = path.resolve(process.cwd(), 'public');
+console.log('📁 Serving static files from:', publicPath);
+app.use(express.static(publicPath));
 
 // API routes
 app.use("/api", userRoutes);
@@ -44,24 +48,44 @@ app.get("/api/health", (req, res) => {
 
 // Serve HTML page at root
 app.get("/", (req, res) => {
-    const indexPath = path.join(__dirname, 'public', 'index.html');
+    const indexPath = path.resolve(process.cwd(), 'public', 'index.html');
+    console.log('Attempting to serve:', indexPath);
     res.sendFile(indexPath, (err) => {
         if (err) {
             console.error('Error serving index.html:', err);
+            // Fallback: serve a default landing page
             res.status(200).send(`
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <title>Car Dealership API</title>
-                    <style>body { font-family: Arial; margin: 50px; }</style>
+                    <style>
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            margin: 50px; 
+                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                            color: white;
+                        }
+                        h1 { color: #e94560; }
+                        a { color: #00d4ff; text-decoration: none; }
+                        a:hover { text-decoration: underline; }
+                    </style>
                 </head>
                 <body>
                     <h1>🚗 Car Dealership API</h1>
                     <p>Server is running successfully!</p>
+                    <h3>API Endpoints:</h3>
                     <ul>
                         <li><a href="/api/health">Health Check</a></li>
-                        <li><a href="/users">View Users</a></li>
+                        <li><a href="/users">View All Users</a></li>
                         <li><a href="/cars.html">View Cars</a></li>
+                    </ul>
+                    <h3>Features:</h3>
+                    <ul>
+                        <li>User Registration: POST /api/register</li>
+                        <li>User Login: POST /api/login</li>
+                        <li>List Users: GET /api/users</li>
+                        <li>Car Management: /api/cars</li>
                     </ul>
                 </body>
                 </html>
