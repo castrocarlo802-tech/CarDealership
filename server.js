@@ -15,9 +15,29 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files - handle multiple possible paths for Render compatibility
-const publicPath = path.resolve(process.cwd(), 'public');
-console.log('📁 Serving static files from:', publicPath);
-app.use(express.static(publicPath));
+const fs = require('fs');
+const potentialPublicPaths = [
+    path.resolve(process.cwd(), 'public'),
+    path.resolve(process.cwd(), 'src', 'public'),
+    path.resolve('/', 'opt', 'render', 'project', 'public'),
+    path.resolve('/', 'opt', 'render', 'project', 'src', 'public'),
+    path.join(__dirname, 'public')
+];
+
+let validPublicPath = null;
+for (const publicPath of potentialPublicPaths) {
+    if (fs.existsSync(publicPath)) {
+        validPublicPath = publicPath;
+        console.log('📁 Found static files at:', publicPath);
+        break;
+    }
+}
+
+if (validPublicPath) {
+    app.use(express.static(validPublicPath));
+} else {
+    console.log('⚠️  No public directory found. Checked:', potentialPublicPaths);
+}
 
 // API routes
 app.use("/api", userRoutes);
@@ -48,50 +68,65 @@ app.get("/api/health", (req, res) => {
 
 // Serve HTML page at root
 app.get("/", (req, res) => {
-    const indexPath = path.resolve(process.cwd(), 'public', 'index.html');
-    console.log('Attempting to serve:', indexPath);
-    res.sendFile(indexPath, (err) => {
-        if (err) {
-            console.error('Error serving index.html:', err);
-            // Fallback: serve a default landing page
-            res.status(200).send(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Car Dealership API</title>
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            margin: 50px; 
-                            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                            color: white;
-                        }
-                        h1 { color: #e94560; }
-                        a { color: #00d4ff; text-decoration: none; }
-                        a:hover { text-decoration: underline; }
-                    </style>
-                </head>
-                <body>
-                    <h1>🚗 Car Dealership API</h1>
-                    <p>Server is running successfully!</p>
-                    <h3>API Endpoints:</h3>
-                    <ul>
-                        <li><a href="/api/health">Health Check</a></li>
-                        <li><a href="/users">View All Users</a></li>
-                        <li><a href="/cars.html">View Cars</a></li>
-                    </ul>
-                    <h3>Features:</h3>
-                    <ul>
-                        <li>User Registration: POST /api/register</li>
-                        <li>User Login: POST /api/login</li>
-                        <li>List Users: GET /api/users</li>
-                        <li>Car Management: /api/cars</li>
-                    </ul>
-                </body>
-                </html>
-            `);
+    const potentialIndexPaths = [
+        path.resolve(process.cwd(), 'public', 'index.html'),
+        path.resolve(process.cwd(), 'src', 'public', 'index.html'),
+        path.resolve('/', 'opt', 'render', 'project', 'public', 'index.html'),
+        path.resolve('/', 'opt', 'render', 'project', 'src', 'public', 'index.html'),
+        path.join(__dirname, 'public', 'index.html')
+    ];
+
+    let foundPath = null;
+    for (const indexPath of potentialIndexPaths) {
+        if (fs.existsSync(indexPath)) {
+            foundPath = indexPath;
+            break;
         }
-    });
+    }
+
+    if (foundPath) {
+        console.log('Serving index.html from:', foundPath);
+        res.sendFile(foundPath);
+    } else {
+        console.error('index.html not found at any of:', potentialIndexPaths);
+        // Fallback: serve a default landing page
+        res.status(200).send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Car Dealership API</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        margin: 50px; 
+                        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                        color: white;
+                    }
+                    h1 { color: #e94560; }
+                    a { color: #00d4ff; text-decoration: none; }
+                    a:hover { text-decoration: underline; }
+                </style>
+            </head>
+            <body>
+                <h1>🚗 Car Dealership API</h1>
+                <p>Server is running successfully!</p>
+                <h3>API Endpoints:</h3>
+                <ul>
+                    <li><a href="/api/health">Health Check</a></li>
+                    <li><a href="/users">View All Users</a></li>
+                    <li><a href="/cars.html">View Cars</a></li>
+                </ul>
+                <h3>Features:</h3>
+                <ul>
+                    <li>User Registration: POST /api/register</li>
+                    <li>User Login: POST /api/login</li>
+                    <li>List Users: GET /api/users</li>
+                    <li>Car Management: /api/cars</li>
+                </ul>
+            </body>
+            </html>
+        `);
+    }
 });
 
 // Helper function to escape HTML to prevent XSS attacks
